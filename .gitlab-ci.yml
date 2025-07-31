@@ -1,0 +1,11 @@
+stages:
+  - validate
+
+validate_sql:
+  image: node:18
+  stage: validate
+  before_script:
+    - npm install -g sql-formatter
+  script:
+    - sql-formatter --version
+    - sql-formatter --check supabase/migrations/*.sql
