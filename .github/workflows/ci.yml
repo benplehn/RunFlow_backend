@@ -17,11 +17,12 @@ jobs:
 
       - name: Download Supabase CLI
         run: |
-          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o supabase.tar.gz
-          rm -f supabase
-          tar -xzf supabase.tar.gz
-          chmod +x supabase
-          sudo mv supabase /usr/local/bin/supabase
+          mkdir -p .tmp_supabase_bin
+          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o .tmp_supabase_bin/supabase.tar.gz
+          tar -xzf .tmp_supabase_bin/supabase.tar.gz -C .tmp_supabase_bin
+          chmod +x .tmp_supabase_bin/supabase
+          sudo mv .tmp_supabase_bin/supabase /usr/local/bin/supabase
+
 
 
       - name: Check Supabase CLI version
