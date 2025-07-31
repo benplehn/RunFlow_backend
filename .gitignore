@@ -1,3 +1,40 @@
-.venv/
-__pycache__/
-*.pyc
+stages:
+  - lint
+  - test
+  - deploy
+
+variables:
+  PGDATABASE: postgres
+  PGUSER: postgres
+  PGPASSWORD: postgres
+  PGPORT: 5432
+  PGHOST: 127.0.0.1
+
+# Lint SQL
+lint_sql:
+  image: node:18
+  stage: lint
+  before_script:
+    - npm install -g sql-formatter
+  script:
+    - sql-formatter --check supabase/migrations/*.sql
+
+# Tests SQL avec pgTAP
+test_pgtap:
+  image: postgres:15
+  stage: test
+  services:
+    - postgres:15
+  before_script:
+    - apt-get update && apt-get install -y postgresql-plpython3-15 postgresql-15-pgtap
+    - psql -U $PGUSER -d $PGDATABASE -c "CREATE EXTENSION IF NOT EXISTS pgtap;"
+  script:
+    - for f in supabase/tests/**/*.sql; do psql -U $PGUSER -d $PGDATABASE -f "$f"; done
+
+# (Optionnel) Déploiement Supabase
+# deploy_supabase:
+#   image: node:18
+#   stage: deploy
+#   script:
+#     - npm install -g supabase
+#     - supabase db push --remote
