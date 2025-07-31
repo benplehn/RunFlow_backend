@@ -1,8 +1,5 @@
 name: Supabase CI
 
-env:
-  SUPABASE_VERSION: v2.33.7
-
 on:
   push:
     branches: [main]
@@ -21,7 +18,7 @@ jobs:
       - name: Download Supabase CLI
         run: |
           VERSION_NUMBER=${SUPABASE_VERSION#v}
-          curl -L https://github.com/supabase/cli/releases/download/${SUPABASE_VERSION}/supabase_${VERSION_NUMBER}_linux_amd64.tar.gz -o supabase.tar.gz
+          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o supabase.tar.gz
           tar -xzf supabase.tar.gz
           chmod +x supabase
           sudo mv supabase /usr/local/bin/supabase
