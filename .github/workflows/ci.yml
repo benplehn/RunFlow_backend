@@ -32,7 +32,7 @@ jobs:
         run: supabase start
 
       - name: Reset DB
-        run: supabase db reset --force
+        run: supabase db reset --yes
 
       - name: Run pgTAP tests
         run: supabase test db
