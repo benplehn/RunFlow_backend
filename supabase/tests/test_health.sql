@@ -1,8 +1,8 @@
--- Vérifie que la DB tourne
 BEGIN;
 
-SELECT plan(1);
+SELECT plan(1);  -- On prévoit 1 test
 
-SELECT ok(true, 'Le test minimal passe');
+-- Ce test passe toujours (utilisé pour vérifier l’intégration GitHub Actions)
+SELECT pass('health test passes');
 
 ROLLBACK;

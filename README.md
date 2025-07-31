@@ -24,9 +24,12 @@ runapp-backend/
 │   ├── migrations/               # Scripts SQL versionnés par module
 │   │   └── YYYYMMDD_xxxxxx.sql
 │   ├── functions/                # Edge functions TypeScript (notifications, sync…)
+│   ├── seed.sql                  # Données de départ injectées automatiquement
 │   └── tests/                    # Tests pgTAP pour la sécurité et les règles métier
-├── .gitlab-ci.yml                # Pipeline CI avec lint + tests
+│       └── test_health.sql
 ├── .gitignore                   
+├── .github/workflows/ci.yml     # Pipeline CI GitHub Actions
+├── requirements.txt             # Dépendances Python (si besoin API/tests)
 └── README.md                    # Ce fichier
 ```
 
@@ -35,9 +38,9 @@ runapp-backend/
 ## 🔧 Environnement requis
 
 * Node.js ≥ 18
-* Supabase CLI (`brew install supabase/tap/supabase`)
+* Supabase CLI ([https://supabase.com/docs/guides/cli](https://supabase.com/docs/guides/cli))
 * Docker Desktop (lancé en arrière-plan)
-* Git + GitLab (CI/CD)
+* Git + GitHub (CI/CD)
 * VS Code avec plugins : Supabase, SQLTools, Docker
 
 ---
@@ -47,8 +50,10 @@ runapp-backend/
 ```bash
 supabase start             # Lance Supabase en local (Postgres + Auth + Studio)
 supabase status            # Vérifie les ports
+supabase db reset          # Reset complet + seed
 supabase db push           # Applique les migrations locales
-supabase functions deploy  # Déploie une edge function
+supabase test db           # Exécute les tests pgTAP
+supabase functions deploy  # Déploie une edge function (plus tard)
 ```
 
 ---
@@ -59,7 +64,7 @@ supabase functions deploy  # Déploie une edge function
 * Chaque **module = 1 fichier migration** SQL propre (`YYYYMMDD_create_module.sql`)
 * Chaque table a ses **policies RLS** (`select`, `insert`, `update`, `delete`)
 * Les tests SQL sont faits avec **pgTAP** dans `supabase/tests/`
-* Le code est **linté via GitLab CI** (`sql-formatter` + tests plus tard)
+* Le code est **linté via GitHub Actions** (`sql-formatter` + tests pgTAP)
 
 ---
 
@@ -89,15 +94,22 @@ supabase functions deploy  # Déploie une edge function
 
 * RLS activé sur toutes les tables
 * Tests pgTAP pour chaque module dans `supabase/tests/`
-* CI GitLab :
+* Fichier `seed.sql` pour injecter des données de test dès le lancement local
+* CI GitHub :
 
-  * Lint SQL
-  * (à venir) Exécution des tests pgTAP
-  * (à venir) Déploiement conditionnel staging/production
+  * ✅ Lint SQL
+  * ✅ Exécution des tests pgTAP
+  * (à venir) Déploiement staging/production
 
 ---
 
-## 🛠 À venir (étapes futures)
+## 📛 Badges
+
+[![CI](https://github.com/benplehn/RunFlow_backend/actions/workflows/ci.yml/badge.svg)](https://github.com/benplehn/RunFlow_backend/actions/workflows/ci.yml)
+
+---
+
+## 🛠 Étapes futures
 
 * Connexion frontend via Supabase JS SDK
 * Synchronisation Strava (OAuth 2.0)
