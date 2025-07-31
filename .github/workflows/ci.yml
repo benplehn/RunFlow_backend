@@ -1,0 +1,33 @@
+name: Supabase CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run pgTAP tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Start Supabase services
+        run: supabase start
+
+      - name: Reset DB
+        run: supabase db reset --force
+
+      - name: Run tests
+        run: supabase test db
