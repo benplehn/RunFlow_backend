@@ -19,6 +19,15 @@ table_result=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -tAc
 [[ "$table_result" == "profiles" ]] || fail "Table 'profiles' absente !"
 ok "Table 'profiles' présente."
 
+echo "⏳ Vérification de la présence des profils seedés..."
+alice=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -tAc \
+"SELECT username FROM public.profiles WHERE username='alice';" | tr -d ' ')
+bob=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -tAc \
+"SELECT username FROM public.profiles WHERE username='bob';" | tr -d ' ')
+[[ "$alice" == "alice" ]] || fail "Profil 'alice' absent du seed !"
+[[ "$bob" == "bob" ]] || fail "Profil 'bob' absent du seed !"
+ok "Profils seedés présents (alice, bob, ...)."
+
 echo "⏳ Vérification des colonnes attendues..."
 columns=(id username avatar_url preferences created_at updated_at)
 for col in "${columns[@]}"; do
