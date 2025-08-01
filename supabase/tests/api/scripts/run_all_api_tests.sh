@@ -1,14 +1,16 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "🚀 Lancement des tests API..."
+: "${API_URL:?}" : "${ANON_KEY:?}"
 
-# 1. Crée un utilisateur + récupère le JWT
-source "$(dirname "$0")/test_auth_api.sh"
+export SUPABASE_API_URL="$API_URL"
+export SUPABASE_ANON_KEY="$ANON_KEY"
 
-# 2. Lance les tests API protégés
-export JWT=$JWT
+# email unique pour éviter les collisions
+export TEST_EMAIL="user$(date +%s)@example.com"
+
+source "$(dirname "$0")/test_auth_api.sh"      # crée l’utilisateur → JWT
+export JWT
 source "$(dirname "$0")/test_profiles_api.sh"
 
-echo "✅ Tous les tests API passés avec succès !"
-
+echo "✅ Tests API terminés"

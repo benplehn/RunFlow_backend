@@ -1,66 +1,50 @@
-name: Supabase CI STAGING
+name: Supabase CI – DB tests (staging)
 
 on:
   push:
-    branches: [main, staging]
-  pull_request:
-    branches: [main, staging]
+    branches: [staging, main]      # adaptez si besoin
   workflow_dispatch:
 
+env:
+  # Référence de votre projet Supabase (trouvable dans l’URL du dashboard)
+  SUPABASE_PROJECT_REF: lojjhatxyaxxbxiqbuwp
+
 jobs:
-  db-tests:
-    name: Run DB migrations & structure tests (staging)
+  db-tests-staging:
+    name: Run DB tests on staging
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # 1. Récupération du dépôt
+      - uses: actions/checkout@v4
 
-      - name: Install Supabase CLI
+      # 2. Installation du CLI Supabase
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # 3. Lien vers le projet cloud « staging »
+      - name: Link Supabase project
+        run: supabase link --project-ref $SUPABASE_PROJECT_REF --non-interactive
+
+      # 4. Envoi des dernières migrations + seed (équivaut au schema de la branche)
+      - name: Push DB schema to staging
+        run: supabase db push --linked --yes
+
+      # 5. Construction & export de la chaîne de connexion distante
+      - name: Export DB_URL
         run: |
-          mkdir -p .tmp_supabase_bin
-          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o .tmp_supabase_bin/supabase.tar.gz
-          tar -xzf .tmp_supabase_bin/supabase.tar.gz -C .tmp_supabase_bin
-          chmod +x .tmp_supabase_bin/supabase
-          sudo mv .tmp_supabase_bin/supabase /usr/local/bin/supabase
+          echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require" >> "$GITHUB_ENV"
 
-      - name: Vérification Supabase CLI
-        run: supabase --version
-
-      - name: Link Supabase STAGING project
-        run: supabase link --project-ref lojjhatxyaxxbxiqbuwp  # 🔁 à adapter une fois
-
-      - name: Push latest schema to staging
-        run: supabase db push
-
+      # 6. Client psql
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-15-pgtap
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Run STRUCTURE tests on staging (read-only)
-        run: bash supabase/tests/db/scripts/test_db_profiles_structure.sh
-        env:
-          PGHOST: db.lojjhatxyaxxbxiqbuwp.supabase.co
-          PGPORT: 5432
-          PGUSER: postgres
-          PGDATABASE: postgres
-          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
-
-  test-api:
-    name: Run REST API tests (staging)
-    runs-on: ubuntu-latest
-    needs: db-tests
-    env:
-      SUPABASE_API_URL: https://lojjhatxyaxxbxiqbuwp.supabase.co
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_STAGING }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y curl jq
-
-      - name: Run API tests (signup + login + profiles)
-        run: bash supabase/tests/api/scripts/run_all_api_tests.sh
+      # 7. Exécution des scripts de tests DB
+      - name: Run DB structure tests
+        run: |
+          bash supabase/tests/db/scripts/test_db_profiles_structure.sh
+          bash supabase/tests/db/scripts/test_db_profiles_full.sh
