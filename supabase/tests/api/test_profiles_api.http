@@ -1,0 +1,14 @@
+### 🔎 Récupérer les profils
+GET {{SUPABASE_API_URL}}/rest/v1/profiles?select=*
+apikey: {{SUPABASE_ANON_KEY}}
+Authorization: Bearer {{JWT}}
+
+### ✏️ Modifier un profil
+PATCH {{SUPABASE_API_URL}}/rest/v1/profiles?id=eq.1
+Content-Type: application/json
+apikey: {{SUPABASE_ANON_KEY}}
+Authorization: Bearer {{JWT}}
+
+{
+  "username": "benjaminplehn"
+}

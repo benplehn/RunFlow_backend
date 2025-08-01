@@ -1,0 +1,26 @@
+{
+  "rest-client.environmentVariables": {
+    "$shared": {
+      "version": "v1"
+    },
+    "local": {
+      "SUPABASE_API_URL": "http://127.0.0.1:54321",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvampoYXR4eWF4eGJ4aXFidXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTgxNTgsImV4cCI6MjA2OTUzNDE1OH0.JzJ5Du-7HCs5Mplr3-GtheliPix3AJep38W6QerJPLg",
+      "JWT": ""
+    },
+    "staging": {
+      "SUPABASE_API_URL": "https://lojjhatxyaxxbxiqbuwp.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvampoYXR4eWF4eGJ4aXFidXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTgxNTgsImV4cCI6MjA2OTUzNDE1OH0.JzJ5Du-7HCs5Mplr3-GtheliPix3AJep38W6QerJPLg",
+      "JWT": ""
+    },
+    "prod": {
+      "SUPABASE_API_URL": "https://xyz.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvampoYXR4eWF4eGJ4aXFidXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTgxNTgsImV4cCI6MjA2OTUzNDE1OH0.JzJ5Du-7HCs5Mplr3-GtheliPix3AJep38W6QerJPLg",
+      "JWT": ""
+    }
+  },
+  "rest-client.proxy": "",
+  "rest-client.enableProxy": false
+}
+
+

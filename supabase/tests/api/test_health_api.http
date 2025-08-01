@@ -1,0 +1,5 @@
+@env = env.local.httpenv
+
+### 🩺 Vérification du service Supabase (auth)
+GET {{SUPABASE_API_URL}}/auth/v1/health
+apikey: {{SUPABASE_ANON_KEY}}

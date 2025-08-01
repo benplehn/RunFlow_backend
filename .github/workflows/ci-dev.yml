@@ -36,6 +36,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Test FULL présence, structure & trigger (dev)
-        run: supabase/scripts/test_db_profiles_full.sh
+        run: supabase/tests/scripts/test_db_profiles_full.sh
         env:
           PGPASSWORD: postgres

@@ -1,0 +1,19 @@
+### 🔐 Signup - Créer un utilisateur
+POST {{SUPABASE_API_URL}}/auth/v1/signup
+Content-Type: application/json
+apikey: {{SUPABASE_ANON_KEY}}
+
+{
+  "email": "testuser@example.com",
+  "password": "motdepassefort123"
+}
+
+### 🔓 Login - Connexion utilisateur
+POST {{SUPABASE_API_URL}}/auth/v1/token?grant_type=password
+Content-Type: application/json
+apikey: {{SUPABASE_ANON_KEY}}
+
+{
+  "email": "testuser@example.com",
+  "password": "motdepassefort123"
+}

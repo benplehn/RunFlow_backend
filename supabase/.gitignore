@@ -1,6 +1,8 @@
 # Supabase
 /supabase/.branches/
 /supabase/.temp/
+tests/api/.env.*.httpenv
+.vscode/settings.json
 # dotenvx
 .env.keys
 .env.local
