@@ -36,7 +36,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Test STRUCTURE ONLY de la table profiles (prod/staging)
-        run: supabase/tests/scripts/test_db_profiles_structure.sh
+        run: supabase/tests/db/scripts/test_db_profiles_structure.sh
         env:
           PGPASSWORD: postgres
 
