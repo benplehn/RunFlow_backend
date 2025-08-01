@@ -55,25 +55,5 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y curl jq
 
-      - name: Signup utilisateur test
-        run: |
-          curl -X POST $SUPABASE_API_URL/auth/v1/signup \
-            -H "Content-Type: application/json" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -d '{"email":"ciuser@example.com","password":"ci-password"}' || true
-
-      - name: Login utilisateur test (générer JWT)
-        id: login
-        run: |
-          TOKEN=$(curl -s -X POST "$SUPABASE_API_URL/auth/v1/token?grant_type=password" \
-            -H "Content-Type: application/json" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -d '{"email":"ciuser@example.com","password":"ci-password"}' | jq -r '.access_token')
-
-          echo "JWT=$TOKEN" >> "$GITHUB_ENV"
-
-      - name: Test endpoint protégé /profiles
-        run: |
-          curl -f -s -X GET "$SUPABASE_API_URL/rest/v1/profiles?select=*" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $JWT"
+      - name: Run API tests (signup + login + profiles)
+        run: ./supabase/tests/api/scripts/run_all_api_tests.sh
