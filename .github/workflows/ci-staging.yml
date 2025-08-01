@@ -2,54 +2,53 @@ name: Supabase CI – DB tests (staging)
 
 on:
   push:
-    branches: [staging, main]     # adapte si besoin
+    branches: [staging, main]           # adapte si besoin
   workflow_dispatch:
 
 env:
-  SUPABASE_PROJECT_REF: lojjhatxyaxxbxiqbuwp   # ID de ton projet
+  SUPABASE_PROJECT_REF: lojjhatxyaxxbxiqbuwp   # ID du projet Supabase
 
 jobs:
   db-tests-staging:
-    runs-on: ubuntu-latest
     name: Run DB tests on staging
+    runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
+      SUPABASE_ACCESS_TOKEN:  ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD:   ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
 
     steps:
-      # 1. Code
-      - uses: actions/checkout@v4
+    # 1. Récupération du dépôt
+    - uses: actions/checkout@v4
 
-      # 2. CLI Supabase
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
+    # 2. Installation CLI Supabase
+    - uses: supabase/setup-cli@v1
+      with: { version: latest }
 
-      # 3. Lien vers le projet cloud (sans prompt)
-      - name: Link Supabase project (staging)
-        run: |
-          supabase link \
-            --project-ref "$SUPABASE_PROJECT_REF" \
-            --password "$SUPABASE_DB_PASSWORD" \
-            --yes
+    # 3. Link projet cloud (pas de prompt : --password + --yes)
+    - name: Link Supabase project
+      run: |
+        supabase link \
+          --project-ref "$SUPABASE_PROJECT_REF" \
+          --password     "$SUPABASE_DB_PASSWORD" \
+          --yes
 
-      # 4. Push des migrations + seed vers staging
-      - name: Push DB schema to staging
-        run: supabase db push --linked --yes   # --linked = use project just linked
+    # 4. Push des migrations + seed vers STAGING
+    - name: Push DB schema to staging
+      run: supabase db push --linked --yes
 
-      # 5. Résout l’IPv4 une seule fois et exporte DB_URL
-      - name: Export DB_URL (IPv4)
-        run: |
-          IP=$(dig +short A db.${SUPABASE_PROJECT_REF}.supabase.co | head -1)
-          echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@${IP}:5432/postgres?sslmode=require" >> $GITHUB_ENV
+    # 5. Résolution IPv4 et export DB_URL
+    - name: Export DB_URL (IPv4 only)
+      run: |
+        IP=$(dig +short A "db.${SUPABASE_PROJECT_REF}.supabase.co" | head -1)
+        echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@${IP}:5432/postgres?sslmode=require" >> "$GITHUB_ENV"
 
-      # 6. Client psql
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+    # 6. Client psql
+    - name: Install PostgreSQL client
+      run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      # 7. Exporte DATABASE_URL puis lance les scripts
-      - name: Run DB structure tests
-        run: |
-          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV   # ← expansion correcte ici
-          bash supabase/tests/db/scripts/test_db_profiles_structure.sh
-          bash supabase/tests/db/scripts/test_db_profiles_full.sh
+    # 7. Lancement des tests DB (DATABASE_URL exporté dans *cette* étape)
+    - name: Run DB structure tests
+      run: |
+        export DATABASE_URL="$DB_URL"      # ← visible immédiatement par le shell
+        bash supabase/tests/db/scripts/test_db_profiles_structure.sh
+        bash supabase/tests/db/scripts/test_db_profiles_full.sh
