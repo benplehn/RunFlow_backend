@@ -1,0 +1,36 @@
+name: Supabase CI DEV
+
+on:
+  push:
+    branches: [dev, feature/**]
+  pull_request:
+    branches: [dev, feature/**]
+
+jobs:
+  test:
+    name: Run pgTAP tests (dev)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download Supabase CLI
+        run: |
+          mkdir -p .tmp_supabase_bin
+          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o .tmp_supabase_bin/supabase.tar.gz
+          tar -xzf .tmp_supabase_bin/supabase.tar.gz -C .tmp_supabase_bin
+          chmod +x .tmp_supabase_bin/supabase
+          sudo mv .tmp_supabase_bin/supabase /usr/local/bin/supabase
+
+      - name: Check Supabase CLI version
+        run: supabase --version
+
+      - name: Start Supabase services
+        run: supabase start
+
+      - name: Reset DB (dev only!)
+        run: supabase db reset --yes
+
+      - name: Run pgTAP tests
+        run: supabase test db

@@ -1,14 +1,14 @@
-name: Supabase CI
+name: Supabase CI PROD
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   test:
-    name: Run pgTAP tests
+    name: Run migrations & pgTAP tests (prod/staging)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,16 +23,14 @@ jobs:
           chmod +x .tmp_supabase_bin/supabase
           sudo mv .tmp_supabase_bin/supabase /usr/local/bin/supabase
 
-
-
       - name: Check Supabase CLI version
         run: supabase --version
 
       - name: Start Supabase services
         run: supabase start
 
-      - name: Reset DB
-        run: supabase db reset --yes
+      - name: Apply migrations (NEVER reset in prod/staging)
+        run: supabase db push
 
       - name: Run pgTAP tests
         run: supabase test db
