@@ -1,4 +1,4 @@
-name: Supabase CI PROD
+name: Supabase CI STAGING
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Run migrations & DB structure tests (prod/staging)
+    name: Run migrations & DB structure tests (staging)
     runs-on: ubuntu-latest
 
     steps:
