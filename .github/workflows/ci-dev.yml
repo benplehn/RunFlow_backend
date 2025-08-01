@@ -8,14 +8,14 @@ on:
 
 jobs:
   test:
-    name: Run pgTAP tests (dev)
+    name: Vérification DB (dev)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download Supabase CLI
+      - name: Install Supabase CLI
         run: |
           mkdir -p .tmp_supabase_bin
           curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o .tmp_supabase_bin/supabase.tar.gz
@@ -32,5 +32,10 @@ jobs:
       - name: Reset DB (dev only!)
         run: supabase db reset --yes
 
-      - name: Run pgTAP tests
-        run: supabase test db
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Test FULL présence, structure & trigger (dev)
+        run: supabase/scripts/test_db_profiles_full.sh
+        env:
+          PGPASSWORD: postgres
