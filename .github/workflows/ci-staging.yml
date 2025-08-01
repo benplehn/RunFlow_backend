@@ -2,39 +2,42 @@ name: Supabase CI – DB tests (staging)
 
 on:
   push:
-    branches: [staging, main]      # adaptez si besoin
+    branches: [staging, main]     # adapte si besoin
   workflow_dispatch:
 
 env:
-  # Référence de votre projet Supabase (trouvable dans l’URL du dashboard)
-  SUPABASE_PROJECT_REF: lojjhatxyaxxbxiqbuwp
+  SUPABASE_PROJECT_REF: lojjhatxyaxxbxiqbuwp   # ID de ton projet
 
 jobs:
   db-tests-staging:
-    name: Run DB tests on staging
     runs-on: ubuntu-latest
+    name: Run DB tests on staging
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
 
     steps:
-      # 1. Récupération du dépôt
+      # 1. Code
       - uses: actions/checkout@v4
 
-      # 2. Installation du CLI Supabase
+      # 2. CLI Supabase
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      # 3. Lien vers le projet cloud « staging »
-      - name: Link Supabase project
-        run: supabase link --project-ref $SUPABASE_PROJECT_REF --non-interactive
+      # 3. Lien vers le projet cloud (sans prompt)
+      - name: Link Supabase project (staging)
+        run: |
+          supabase link \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --password "$SUPABASE_DB_PASSWORD" \
+            --yes
 
-      # 4. Envoi des dernières migrations + seed (équivaut au schema de la branche)
+      # 4. Push des migrations + seed vers staging
       - name: Push DB schema to staging
-        run: supabase db push --linked --yes
+        run: supabase db push --linked --yes   # --linked = use project just linked
 
-      # 5. Construction & export de la chaîne de connexion distante
+      # 5. Exporte DB_URL (SSL requis) pour les scripts
       - name: Export DB_URL
         run: |
           echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require" >> "$GITHUB_ENV"
@@ -43,7 +46,7 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      # 7. Exécution des scripts de tests DB
+      # 7. Tests DB
       - name: Run DB structure tests
         run: |
           bash supabase/tests/db/scripts/test_db_profiles_structure.sh
