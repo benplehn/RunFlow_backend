@@ -42,7 +42,8 @@ drop policy if exists "Users can manage their own profile" on public.profiles;
 create policy "Users can manage their own profile"
   on public.profiles
   for all
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 -- Droits d’accès API (à adapter selon tes besoins; ici tous les rôles peuvent accéder via API Supabase)
 grant all on table public.profiles to anon, authenticated, service_role;
