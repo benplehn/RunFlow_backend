@@ -46,9 +46,45 @@ jobs:
     - name: Install PostgreSQL client
       run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-    # 7. Lancement des tests DB (DATABASE_URL exporté dans *cette* étape)
-    - name: Run DB structure tests
+
+      
+    # 7. Débogage + tests DB
+    - name: Debug & run DB tests
       run: |
-        export DATABASE_URL="$DB_URL"      # ← visible immédiatement par le shell
+        set -euo pipefail
+        echo "🖨️  Variables d'environnement reçues :"
+        echo "  DB_URL        = $DB_URL"
+        echo "  SUPABASE_PWD  = ${SUPABASE_DB_PASSWORD:0:4}********"
+        echo
+
+        # 1) Export DATABASE_URL dans le shell courant
+        export DATABASE_URL="$DB_URL"
+        echo "DATABASE_URL    = $DATABASE_URL"
+        echo
+
+        # 2) Découpe l'URL pour afficher host / port
+        host=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+)(:([0-9]+))?/.*|\1|')
+        port=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
+        echo "Host résolu     = $host"
+        echo "Port            = $port"
+        echo
+
+        # 3) Vérifie la résolution DNS
+        echo "🔎  dig +short $host"
+        dig +short "$host" || true
+        echo
+
+        # 4) Teste l'ouverture de socket TCP  (≈ nc -vz)
+        echo "🔌  nc -vz $host $port"
+        nc -vz "$host" "$port" || { echo '❌  Port injoignable'; exit 1; }
+        echo
+
+        # 5) Essai psql simple : affichage version
+        echo "⚡  psql -c 'SELECT version();'"
+        psql "$DATABASE_URL" -c 'SELECT version();' || { echo '❌  Connexion psql impossible'; exit 1; }
+        echo
+
+        # 6) Si tout est OK, lance les scripts réels
+        echo "🚀  Scripts de test DB"
         bash supabase/tests/db/scripts/test_db_profiles_structure.sh
         bash supabase/tests/db/scripts/test_db_profiles_full.sh
