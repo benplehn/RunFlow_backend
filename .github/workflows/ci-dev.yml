@@ -5,37 +5,40 @@ on:
     branches: [dev/**, feature/**]
   pull_request:
     branches: [dev/**, feature/**]
+  workflow_dispatch:
 
 jobs:
   test:
     name: Vérification DB (dev)
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: supabase/postgres:15.1.0.75
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Supabase CLI
-        run: |
-          mkdir -p .tmp_supabase_bin
-          curl -L https://github.com/supabase/cli/releases/download/v2.33.7/supabase_linux_amd64.tar.gz -o .tmp_supabase_bin/supabase.tar.gz
-          tar -xzf .tmp_supabase_bin/supabase.tar.gz -C .tmp_supabase_bin
-          chmod +x .tmp_supabase_bin/supabase
-          sudo mv .tmp_supabase_bin/supabase /usr/local/bin/supabase
+      - name: Install PostgreSQL client + pgTAP
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-15-pgtap
 
-      - name: Check Supabase CLI version
-        run: supabase --version
-
-      - name: Start Supabase services
-        run: supabase start
-
-      - name: Reset DB (dev only!)
-        run: supabase db reset --yes
-
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Test FULL présence, structure & trigger (dev)
-        run: supabase/tests/db/scripts/test_db_profiles_full.sh
+      - name: Run FULL presence/structure tests
+        run: bash supabase/tests/db/scripts/test_db_profiles_full.sh
         env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGDATABASE: postgres
           PGPASSWORD: postgres
