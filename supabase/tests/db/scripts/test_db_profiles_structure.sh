@@ -11,7 +11,9 @@ if [[ -z "${DATABASE_URL:-}" && -n "${DB_URL:-}" ]]; then
 fi
 : "${DATABASE_URL:?DATABASE_URL (ou DB_URL) non défini}"
 
+# dans les deux scripts db
 psql_cmd() { command psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -c "$1"; }
+
 
 fail(){ echo "❌  $1"; exit 1; }
 ok(){   echo "✅  $1"; }

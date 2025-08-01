@@ -38,16 +38,20 @@ jobs:
         run: supabase db push --linked --yes   # --linked = use project just linked
 
       # 5. Exporte DB_URL (SSL requis) pour les scripts
-      - name: Export DB_URL
+      - name: Export DB_URL (IPv4 only)
         run: |
-          echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require" >> "$GITHUB_ENV"
+          IPV4=$(dig +short A db.${SUPABASE_PROJECT_REF}.supabase.co | head -n1)
+          echo "DB_URL=postgres://postgres:${SUPABASE_DB_PASSWORD}@${IPV4}:5432/postgres?sslmode=require" >> $GITHUB_ENV
 
       # 6. Client psql
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      # 7. Tests DB
+      # 7. Run DB tests en forçant IPv4 (-4)
       - name: Run DB structure tests
+        env:
+          DATABASE_URL: "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require"
         run: |
+          export PSQL_FORCE_IPV4="-4"      # variable utilisée par le wrapper
           bash supabase/tests/db/scripts/test_db_profiles_structure.sh
           bash supabase/tests/db/scripts/test_db_profiles_full.sh
