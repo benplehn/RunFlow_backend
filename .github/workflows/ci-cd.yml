@@ -28,9 +28,9 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Supabase CLI
-        run: |
-          npm install -g supabase
-          supabase --version
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 🔧 Validate supabase config
         run: |
@@ -110,9 +110,9 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Supabase CLI
-        run: |
-          npm install -g supabase
-          supabase --version
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 🔧 Initialize Supabase locally
         run: |
@@ -226,7 +226,9 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Supabase CLI
-        run: npm install -g supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 🔧 Setup local Supabase for types
         run: |
@@ -291,7 +293,9 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Supabase CLI
-        run: npm install -g supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 🔐 Login to Supabase
         run: |
@@ -373,7 +377,9 @@ jobs:
           node-version: '20'
 
       - name: 📦 Install Supabase CLI
-        run: npm install -g supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: 🔐 Login to Supabase
         run: |
