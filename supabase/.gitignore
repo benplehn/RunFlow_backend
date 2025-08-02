@@ -8,9 +8,6 @@ tests/api/.env.*.httpenv
 .env.local
 .env.*.local
 
-# Supabase
-.branches
-.temp
 
 # dotenvx
 .env.keys
