@@ -138,8 +138,10 @@ jobs:
 
       - name: 📊 Apply database migrations
         run: |
-          echo "📊 Applying database migrations..."
-          supabase db reset --db-url postgresql://postgres:postgres@localhost:5432/postgres
+          echo "📊 Applying database migrations to test database..."
+          # Pour les tests, on utilise toujours une base locale vide
+          # Peu importe la branche source
+          supabase db push --db-url postgresql://postgres:postgres@localhost:5432/postgres
           echo "✅ All migrations applied successfully"
 
       - name: 🧪 Run pgTAP tests
