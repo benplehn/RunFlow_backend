@@ -3,9 +3,9 @@ name: 🚀 Backend CI/CD Pipeline
 
 on:
   push:
-    branches: [dev, staging]
+    branches: [development, staging]
   pull_request:
-    branches: [dev, staging]
+    branches: [development, staging]
 
 env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
