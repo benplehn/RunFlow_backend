@@ -159,12 +159,12 @@ jobs:
                 
                 if supabase test db "$test_file"; then
                   echo "✅ PASSED: $test_name"
-                  ((passed_count++))
+                  passed_count=$((passed_count + 1))
                 else
                   echo "❌ FAILED: $test_name"
-                  ((failed_count++))
+                  failed_count=$((failed_count + 1))
                 fi
-                ((test_count++))
+                test_count=$((test_count + 1))
               fi
             done
             
