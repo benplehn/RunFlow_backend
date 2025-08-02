@@ -219,7 +219,6 @@ jobs:
 
       - name: 🔧 Setup local Supabase for types
         run: |
-          supabase init --with-vscode-settings=false
           supabase start
 
       - name: 📊 Apply migrations for type generation
