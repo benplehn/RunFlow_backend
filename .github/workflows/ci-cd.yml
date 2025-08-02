@@ -139,9 +139,8 @@ jobs:
       - name: 📊 Apply database migrations
         run: |
           echo "📊 Applying database migrations to test database..."
-          # Pour les tests, on utilise toujours une base locale vide
-          # Peu importe la branche source
-          supabase db push --db-url postgresql://postgres:postgres@localhost:5432/postgres
+          # Utiliser 127.0.0.1 au lieu de localhost pour forcer IPv4
+          supabase db push --db-url postgresql://postgres:postgres@127.0.0.1:5432/postgres
           echo "✅ All migrations applied successfully"
 
       - name: 🧪 Run pgTAP tests
@@ -158,7 +157,7 @@ jobs:
                 test_name=$(basename "$test_file")
                 echo "🔬 Running test: $test_name"
                 
-                if supabase test db --db-url postgresql://postgres:postgres@localhost:5432/postgres "$test_file"; then
+                if supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:5432/postgres "$test_file"; then
                   echo "✅ PASSED: $test_name"
                   ((passed_count++))
                 else
@@ -203,7 +202,7 @@ jobs:
                 echo "🔬 Testing function: $func_name"
                 
                 # Basic endpoint test (expect 401/400, not 404)
-                status_code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:54321/functions/v1/$func_name" || echo "000")
+                status_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:54321/functions/v1/$func_name" || echo "000")
                 
                 if [ "$status_code" != "404" ]; then
                   echo "✅ Function endpoint accessible: $func_name (status: $status_code)"
