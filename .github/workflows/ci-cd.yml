@@ -104,21 +104,6 @@ jobs:
     name: 🧪 Database Tests
     runs-on: ubuntu-latest
     needs: [validate]
-    
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-        ports:
-          - 5432:5432
 
     steps:
       - name: 📥 Checkout repository
@@ -147,8 +132,8 @@ jobs:
 
       - name: 🚀 Start Supabase services
         run: |
-          echo "🚀 Starting Supabase with external database..."
-          supabase start --db-url postgresql://postgres:postgres@localhost:5432/postgres
+          echo "🚀 Starting Supabase services..."
+          supabase start
           echo "✅ Supabase services started"
 
       - name: 📊 Apply database migrations
