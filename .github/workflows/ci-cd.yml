@@ -107,7 +107,7 @@ jobs:
     
     services:
       postgres:
-        image: supabase/postgres:17.4.1.064
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
