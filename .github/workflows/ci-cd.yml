@@ -139,8 +139,8 @@ jobs:
       - name: 📊 Apply database migrations
         run: |
           echo "📊 Applying database migrations to test database..."
-          # Utiliser 127.0.0.1 au lieu de localhost pour forcer IPv4
-          supabase db push --db-url postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          # Utiliser la base locale de Supabase
+          supabase db reset
           echo "✅ All migrations applied successfully"
 
       - name: 🧪 Run pgTAP tests
@@ -157,7 +157,7 @@ jobs:
                 test_name=$(basename "$test_file")
                 echo "🔬 Running test: $test_name"
                 
-                if supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:5432/postgres "$test_file"; then
+                if supabase test db "$test_file"; then
                   echo "✅ PASSED: $test_name"
                   ((passed_count++))
                 else
