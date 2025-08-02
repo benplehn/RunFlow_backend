@@ -148,38 +148,14 @@ jobs:
           if [ -d "supabase/tests" ] && [ "$(ls -A supabase/tests/*.sql 2>/dev/null)" ]; then
             echo "🧪 Running pgTAP test suite..."
             
-            test_count=0
-            passed_count=0
-            failed_count=0
-            
-            for test_file in supabase/tests/*.sql; do
-              if [ -f "$test_file" ]; then
-                test_name=$(basename "$test_file")
-                echo "🔬 Running test: $test_name"
-                
-                if supabase test db "$test_file"; then
-                  echo "✅ PASSED: $test_name"
-                  passed_count=$((passed_count + 1))
-                else
-                  echo "❌ FAILED: $test_name"
-                  failed_count=$((failed_count + 1))
-                fi
-                test_count=$((test_count + 1))
-              fi
-            done
-            
-            echo ""
-            echo "📊 TEST SUMMARY"
-            echo "==============="
-            echo "Total tests: $test_count"
-            echo "Passed: $passed_count"
-            echo "Failed: $failed_count"
-            
-            if [ $failed_count -gt 0 ]; then
-              echo "❌ Some tests failed - blocking deployment"
-              exit 1
-            else
+            # Capturer l'output et le code de sortie
+            if output=$(supabase test db 2>&1); then
+              echo "$output"
               echo "✅ All tests passed!"
+            else
+              echo "$output"
+              echo "❌ Some tests failed!"
+              exit 1
             fi
           else
             echo "ℹ️ No pgTAP tests found - skipping test phase"
