@@ -5,11 +5,11 @@ create extension if not exists "pgcrypto" with schema public;
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   username text unique not null check (length(username) >= 3 and length(username) <= 30),
-  display_name text check (length(display_name) <= 50), -- Nom d'affichage (optionnel)
-  avatar_url text check (avatar_url ~ '^https?://.*'),   -- Validation URL basique
-  bio text check (length(bio) <= 500),                   -- Courte bio utilisateur
-  preferences jsonb default '{}'::jsonb not null,        -- NOT NULL explicite
-  is_active boolean default true not null,               -- Désactivation soft delete
+  display_name text check (length(display_name) <= 50),
+  avatar_url text check (avatar_url ~ '^https?://.*'),
+  bio text check (length(bio) <= 500),
+  preferences jsonb default '{}'::jsonb not null check (jsonb_typeof(preferences) = 'object'),
+  is_active boolean default true not null,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null
 );
@@ -23,7 +23,7 @@ create index if not exists profiles_active_idx on public.profiles (is_active) wh
 create or replace function public.handle_updated_at()
 returns trigger
 language plpgsql
-security definer -- Sécurité renforcée
+security definer
 as $$
 begin
   new.updated_at = now();
@@ -61,7 +61,3 @@ create policy "Users can manage their own profile"
 -- Droits d'accès API
 grant select on table public.profiles to anon, authenticated;
 grant all on table public.profiles to service_role;
-
--- Contrainte check pour valider les préférences JSON (structure basique)
-alter table public.profiles add constraint preferences_valid_json 
-  check (jsonb_typeof(preferences) = 'object');

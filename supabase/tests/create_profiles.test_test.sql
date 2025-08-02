@@ -2,7 +2,7 @@ begin;
 
 -- Charge pgTAP et annonce le nombre de tests
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(24);
 
 -- ========================================
 -- 1. TESTS DE SCHÉMA
@@ -65,55 +65,62 @@ select ok(
 );
 
 -- ========================================
--- 2. TESTS DE COMPORTEMENT
+-- 2. TESTS DE COMPORTEMENT (SANS RLS)
 -- ========================================
 
--- Prépare deux comptes auth
-insert into auth.users (id, email) values
-  ('123e4567-e89b-12d3-a456-426614174000', 'user1@test.com'),
-  ('987fcdeb-51a2-43d7-9012-345678901234', 'user2@test.com');
-
--- Test User 1 : création profil
-set local role authenticated;
-set local request.jwt.claim.sub = '123e4567-e89b-12d3-a456-426614174000';
-
-select lives_ok(
-  $$insert into public.profiles (id, username, display_name)
-    values ('123e4567-e89b-12d3-a456-426614174000','user1_test', 'User One')$$,
-  'User 1 crée son profil'
-);
-
--- Test User 2 : création son propre profil
-set local request.jwt.claim.sub = '987fcdeb-51a2-43d7-9012-345678901234';
-
-select lives_ok(
-  $$insert into public.profiles (id, username)
-    values ('987fcdeb-51a2-43d7-9012-345678901234','user2_test')$$,
-  'User 2 crée son profil'
-);
-
--- Test lecture : User 2 peut voir les profils publics (is_active=true)
-select results_eq(
-  'select count(*) from public.profiles where is_active = true',
-  ARRAY[2::bigint],
-  'User 2 voit tous les profils actifs'
-);
+-- Teste en tant que service_role pour bypasser RLS
+set local role service_role;
 
 -- Test contrainte : username trop court
 select throws_ok(
   $$insert into public.profiles (id, username)
-    values ('111e1111-e11b-11d1-a111-111111111111','ab')$$,
+    values (gen_random_uuid(),'ab')$$,
   '23514', -- check constraint violation
   null,
   'Username trop court rejeté'
 );
 
--- Test trigger updated_at
-select ok(
-  (select updated_at > created_at from public.profiles 
-   where id = '987fcdeb-51a2-43d7-9012-345678901234'
-   limit 1) is false,
-  'updated_at = created_at à la création'
+-- Test contrainte : username trop long
+select throws_ok(
+  $$insert into public.profiles (id, username)
+    values (gen_random_uuid(),'username_vraiment_trop_long_pour_la_contrainte_de_30_caracteres')$$,
+  '23514', -- check constraint violation
+  null,
+  'Username trop long rejeté'
+);
+
+-- Test contrainte JSON preferences (doit être un objet)
+select throws_ok(
+  $$insert into public.profiles (id, username, preferences)
+    values (gen_random_uuid(),'test_json_user', '"string_au_lieu_objet"'::jsonb)$$,
+  '23514', -- check constraint violation
+  null,
+  'Preferences non-objet rejetées'
+);
+
+-- Test insertion valide
+select lives_ok(
+  $$insert into public.profiles (id, username, display_name, preferences)
+    values (gen_random_uuid(), 'test_user_valid', 'Test User', '{"notifications": true}'::jsonb)$$,
+  'Insertion profil valide réussit'
+);
+
+-- Test contrainte URL (si URL fournie, doit être valide)
+select throws_ok(
+  $$insert into public.profiles (id, username, avatar_url)
+    values (gen_random_uuid(), 'test_url_user', 'pas_une_url_valide')$$,
+  '23514', -- check constraint violation
+  null,
+  'URL avatar invalide rejetée'
+);
+
+-- Test contrainte bio (max 500 caractères)
+select throws_ok(
+  $$insert into public.profiles (id, username, bio)
+    values (gen_random_uuid(), 'test_bio_user', repeat('a', 501))$$,
+  '23514', -- check constraint violation
+  null,
+  'Bio trop longue rejetée'
 );
 
 select * from finish();

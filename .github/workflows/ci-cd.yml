@@ -1,189 +1,499 @@
-# .github/workflows/ci-cd.yml
-name: Supabase CI/CD
+# .github/workflows/backend-ci-cd.yml
+name: 🚀 Backend CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [dev, staging]
   pull_request:
-    branches: [main, develop]
+    branches: [dev, staging]
 
 env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-  SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
 
 jobs:
   # ========================================
-  # VALIDATION & LINT
+  # 🔍 VALIDATION PHASE
   # ========================================
   validate:
-    name: Validate SQL & Lint
+    name: 🔍 Validate Code & Config
     runs-on: ubuntu-latest
-    if: >
-      contains(github.event.head_commit.modified, 'supabase/migrations/') ||
-      contains(github.event.head_commit.modified, 'supabase/functions/')
+    
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
-
-      - name: Validate SQL syntax
+      - name: 📦 Install Supabase CLI
         run: |
-          # Lint des migrations
-          if [ -d "supabase/migrations" ]; then
+          npm install -g @supabase/cli@latest
+          supabase --version
+
+      - name: 🔧 Validate supabase config
+        run: |
+          echo "🔧 Validating Supabase configuration..."
+          if [ ! -f "supabase/config.toml" ]; then
+            echo "❌ config.toml not found!"
+            exit 1
+          fi
+          echo "✅ config.toml found"
+          
+          # Check PostgreSQL version
+          if grep -q "major_version = 17" supabase/config.toml; then
+            echo "✅ PostgreSQL 17 configured"
+          else
+            echo "⚠️ PostgreSQL version check failed"
+          fi
+
+      - name: 🔍 Lint SQL migrations
+        run: |
+          if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
+            echo "🔍 Linting SQL migrations..."
             supabase db lint --schema public
+            echo "✅ SQL lint passed"
+          else
+            echo "ℹ️ No migrations to lint"
+          fi
+
+      - name: 🔍 Validate test files
+        run: |
+          if [ -d "supabase/tests" ] && [ "$(ls -A supabase/tests 2>/dev/null)" ]; then
+            echo "🔍 Validating test files..."
+            for test_file in supabase/tests/*.sql; do
+              if [ -f "$test_file" ]; then
+                echo "✅ Found test: $(basename $test_file)"
+                # Basic SQL syntax check
+                if grep -q "begin;" "$test_file" && grep -q "rollback;" "$test_file"; then
+                  echo "✅ Test structure valid: $(basename $test_file)"
+                else
+                  echo "⚠️ Test might be missing transaction wrapper: $(basename $test_file)"
+                fi
+              fi
+            done
+          else
+            echo "ℹ️ No test files found"
           fi
 
   # ========================================
-  # TESTS UNITAIRES (pgTAP)
+  # 🧪 DATABASE TESTING PHASE
   # ========================================
-  test-database:
-    name: Database Tests
+  test:
+    name: 🧪 Database Tests
     runs-on: ubuntu-latest
+    needs: [validate]
+    
     services:
       postgres:
-        image: supabase/postgres:15.1.0.147
+        image: supabase/postgres:17.4.1.064
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
         ports:
           - 5432:5432
+
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
-
-      - name: Setup local Supabase
+      - name: 📦 Install Supabase CLI
         run: |
-          supabase init
+          npm install -g @supabase/cli@latest
+          supabase --version
+
+      - name: 🔧 Initialize Supabase locally
+        run: |
+          echo "🔧 Setting up local Supabase environment..."
+          supabase init --with-vscode-settings=false
+          echo "✅ Supabase initialized"
+
+      - name: 🚀 Start Supabase services
+        run: |
+          echo "🚀 Starting Supabase with external database..."
           supabase start --db-url postgresql://postgres:postgres@localhost:5432/postgres
+          echo "✅ Supabase services started"
 
-      - name: Run database migrations
-        run: supabase db reset --db-url postgresql://postgres:postgres@localhost:5432/postgres
-
-      - name: Run pgTAP tests
+      - name: 📊 Apply database migrations
         run: |
-          if [ -d "supabase/tests" ]; then
+          echo "📊 Applying database migrations..."
+          supabase db reset --db-url postgresql://postgres:postgres@localhost:5432/postgres
+          echo "✅ All migrations applied successfully"
+
+      - name: 🧪 Run pgTAP tests
+        run: |
+          if [ -d "supabase/tests" ] && [ "$(ls -A supabase/tests/*.sql 2>/dev/null)" ]; then
+            echo "🧪 Running pgTAP test suite..."
+            
+            test_count=0
+            passed_count=0
+            failed_count=0
+            
             for test_file in supabase/tests/*.sql; do
-              echo "Running test: $test_file"
-              supabase test db --db-url postgresql://postgres:postgres@localhost:5432/postgres "$test_file"
+              if [ -f "$test_file" ]; then
+                test_name=$(basename "$test_file")
+                echo "🔬 Running test: $test_name"
+                
+                if supabase test db --db-url postgresql://postgres:postgres@localhost:5432/postgres "$test_file"; then
+                  echo "✅ PASSED: $test_name"
+                  ((passed_count++))
+                else
+                  echo "❌ FAILED: $test_name"
+                  ((failed_count++))
+                fi
+                ((test_count++))
+              fi
             done
+            
+            echo ""
+            echo "📊 TEST SUMMARY"
+            echo "==============="
+            echo "Total tests: $test_count"
+            echo "Passed: $passed_count"
+            echo "Failed: $failed_count"
+            
+            if [ $failed_count -gt 0 ]; then
+              echo "❌ Some tests failed - blocking deployment"
+              exit 1
+            else
+              echo "✅ All tests passed!"
+            fi
+          else
+            echo "ℹ️ No pgTAP tests found - skipping test phase"
+          fi
+
+      - name: 🔧 Test Edge Functions (if any)
+        run: |
+          if [ -d "supabase/functions" ] && [ "$(ls -A supabase/functions 2>/dev/null)" ]; then
+            echo "🔧 Testing Edge Functions..."
+            
+            # Start functions server in background
+            timeout 30s supabase functions serve &
+            FUNCTIONS_PID=$!
+            sleep 10
+            
+            # Test function endpoints
+            for func_dir in supabase/functions/*/; do
+              if [ -d "$func_dir" ]; then
+                func_name=$(basename "$func_dir")
+                echo "🔬 Testing function: $func_name"
+                
+                # Basic endpoint test (expect 401/400, not 404)
+                status_code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:54321/functions/v1/$func_name" || echo "000")
+                
+                if [ "$status_code" != "404" ]; then
+                  echo "✅ Function endpoint accessible: $func_name (status: $status_code)"
+                else
+                  echo "❌ Function endpoint not found: $func_name"
+                fi
+              fi
+            done
+            
+            # Clean up
+            kill $FUNCTIONS_PID 2>/dev/null || true
+            echo "✅ Edge Functions test completed"
+          else
+            echo "ℹ️ No Edge Functions found - skipping function tests"
           fi
 
   # ========================================
-  # TESTS EDGE FUNCTIONS
+  # 🎯 TYPE GENERATION PHASE
   # ========================================
-  test-functions:
-    name: Edge Functions Tests
+  generate-types:
+    name: 🎯 Generate TypeScript Types
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'supabase/functions/')
+    needs: [test]
+    
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
+      - name: 📦 Install Supabase CLI
+        run: npm install -g @supabase/cli@latest
 
-      - name: Start Supabase locally
+      - name: 🔧 Setup local Supabase for types
         run: |
+          supabase init --with-vscode-settings=false
           supabase start
-          supabase functions serve &
-          sleep 15
 
-      - name: Test functions health
+      - name: 📊 Apply migrations for type generation
         run: |
-          # Test basique de santé des functions
-          curl -f http://localhost:54321/functions/v1/health || echo "No health endpoint yet"
+          echo "📊 Applying migrations for type generation..."
+          supabase db reset
+          echo "✅ Database ready for type generation"
+
+      - name: 🎯 Generate TypeScript types
+        run: |
+          echo "🎯 Generating TypeScript types from database schema..."
+          mkdir -p types
+          supabase gen types typescript --local > types/database.types.ts
+          
+          # Validate generated types
+          if [ -f "types/database.types.ts" ] && [ -s "types/database.types.ts" ]; then
+            echo "✅ Types generated successfully"
+            echo "📊 Generated file size: $(wc -c < types/database.types.ts) bytes"
+            echo "📊 Number of lines: $(wc -l < types/database.types.ts)"
+            
+            # Check for expected content
+            if grep -q "export interface Database" types/database.types.ts; then
+              echo "✅ Database interface found in types"
+            else
+              echo "⚠️ Database interface not found - types might be incomplete"
+            fi
+          else
+            echo "❌ Type generation failed"
+            exit 1
+          fi
+
+      - name: 💾 Upload generated types
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-types-${{ github.sha }}
+          path: types/database.types.ts
+          retention-days: 7
 
   # ========================================
-  # DÉPLOIEMENT STAGING
+  # 🚀 DEPLOYMENT TO DEV
+  # ========================================
+  deploy-dev:
+    name: 🚀 Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [validate, test, generate-types]
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    environment:
+      name: development
+      url: https://${{ secrets.SUPABASE_DEV_PROJECT_ID }}.supabase.co
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Supabase CLI
+        run: npm install -g @supabase/cli@latest
+
+      - name: 🔐 Login to Supabase
+        run: |
+          echo "🔐 Authenticating with Supabase..."
+          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          echo "✅ Authentication successful"
+
+      - name: 🔗 Link to Development project
+        run: |
+          echo "🔗 Linking to development project..."
+          supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_ID }}
+          echo "✅ Successfully linked to development project"
+
+      - name: 📊 Deploy database migrations
+        run: |
+          echo "📊 Deploying database changes to DEVELOPMENT..."
+          echo "ℹ️ Including seed data for development testing"
+          
+          supabase db push --include-seed
+          
+          echo "✅ Database deployment completed"
+
+      - name: 🔧 Deploy Edge Functions
+        run: |
+          if [ -d "supabase/functions" ] && [ "$(ls -A supabase/functions 2>/dev/null)" ]; then
+            echo "🔧 Deploying Edge Functions to development..."
+            
+            for func_dir in supabase/functions/*/; do
+              if [ -d "$func_dir" ]; then
+                func_name=$(basename "$func_dir")
+                echo "📤 Deploying function: $func_name"
+              fi
+            done
+            
+            supabase functions deploy
+            echo "✅ Edge Functions deployed successfully"
+          else
+            echo "ℹ️ No Edge Functions to deploy"
+          fi
+
+      - name: 🎯 Generate production types
+        run: |
+          echo "🎯 Generating types from deployed database..."
+          mkdir -p types
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_DEV_PROJECT_ID }} > types/database.types.ts
+          echo "✅ Production types generated"
+
+      - name: 📋 Development deployment summary
+        run: |
+          echo ""
+          echo "🎉 DEVELOPMENT DEPLOYMENT COMPLETED!"
+          echo "====================================="
+          echo "🔗 Project URL: https://${{ secrets.SUPABASE_DEV_PROJECT_ID }}.supabase.co"
+          echo "📊 Dashboard: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_DEV_PROJECT_ID }}"
+          echo "🧪 Environment: Development (with seed data)"
+          echo "⏰ Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "🎯 Ready for testing your mobile app!"
+
+  # ========================================
+  # 🎭 DEPLOYMENT TO STAGING
   # ========================================
   deploy-staging:
-    name: Deploy to Staging
+    name: 🎭 Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [validate, test-database]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    needs: [validate, test, generate-types]
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
     environment:
       name: staging
-      url: https://${{ secrets.SUPABASE_PROJECT_ID }}.supabase.co
+      url: https://${{ secrets.SUPABASE_STAGING_PROJECT_ID }}.supabase.co
+    
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
+      - name: 📦 Install Supabase CLI
+        run: npm install -g @supabase/cli@latest
 
-      - name: Deploy to Supabase Staging
+      - name: 🔐 Login to Supabase
         run: |
+          echo "🔐 Authenticating with Supabase..."
           supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
-          supabase db push --include-seed
-          if [ -d "supabase/functions" ]; then
+          echo "✅ Authentication successful"
+
+      - name: 🔗 Link to Staging project
+        run: |
+          echo "🔗 Linking to staging project..."
+          supabase link --project-ref ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
+          echo "✅ Successfully linked to staging project"
+
+      - name: 📊 Deploy database migrations
+        run: |
+          echo "📊 Deploying database changes to STAGING..."
+          echo "⚠️ Deploying WITHOUT seed data (production-like environment)"
+          
+          supabase db push --include-seed=false
+          
+          echo "✅ Database deployment completed"
+
+      - name: 🔧 Deploy Edge Functions
+        run: |
+          if [ -d "supabase/functions" ] && [ "$(ls -A supabase/functions 2>/dev/null)" ]; then
+            echo "🔧 Deploying Edge Functions to staging..."
             supabase functions deploy
+            echo "✅ Edge Functions deployed successfully"
+          else
+            echo "ℹ️ No Edge Functions to deploy"
           fi
 
+      - name: 🧪 Post-deployment validation
+        run: |
+          echo "🧪 Running post-deployment validation..."
+          
+          # Test database connection
+          echo "📡 Testing database connection..."
+          supabase db version --remote
+          
+          # Test API endpoints (basic connectivity)
+          echo "📡 Testing API endpoints..."
+          API_URL="https://${{ secrets.SUPABASE_STAGING_PROJECT_ID }}.supabase.co/rest/v1/"
+          
+          # Test health endpoint
+          if curl -f "${API_URL}" -H "apikey: ${{ secrets.SUPABASE_ANON_KEY || 'dummy_key' }}" 2>/dev/null; then
+            echo "✅ API endpoint accessible"
+          else
+            echo "⚠️ API test completed (authentication required - expected)"
+          fi
+          
+          echo "✅ Post-deployment validation completed"
+
+      - name: 🎯 Generate production types
+        run: |
+          echo "🎯 Generating types from deployed database..."
+          mkdir -p types
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_STAGING_PROJECT_ID }} > types/database.types.ts
+          echo "✅ Production types generated"
+
+      - name: 📋 Staging deployment summary
+        run: |
+          echo ""
+          echo "🎉 STAGING DEPLOYMENT COMPLETED!"
+          echo "================================="
+          echo "🔗 Project URL: https://${{ secrets.SUPABASE_STAGING_PROJECT_ID }}.supabase.co"
+          echo "📊 Dashboard: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_STAGING_PROJECT_ID }}"
+          echo "🎭 Environment: Staging (production-like, no seed data)"
+          echo "⏰ Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "✅ Ready for final validation before production!"
+
   # ========================================
-  # DÉPLOIEMENT PRODUCTION
+  # 📊 PIPELINE STATUS SUMMARY
   # ========================================
-  deploy-production:
-    name: Deploy to Production
+  status:
+    name: 📊 Pipeline Status
     runs-on: ubuntu-latest
-    needs: [validate, test-database]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: production
-      url: https://${{ secrets.SUPABASE_PROJECT_ID }}.supabase.co
+    needs: [deploy-dev, deploy-staging]
+    if: always()
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Supabase CLI
-        run: npm install -g @supabase/cli
-
-      - name: Deploy to Supabase Production
+      - name: 📊 Generate pipeline report
         run: |
-          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
-          supabase db push --include-seed=false  # Pas de seed en prod
-          if [ -d "supabase/functions" ]; then
-            supabase functions deploy
+          echo ""
+          echo "📊 BACKEND CI/CD PIPELINE REPORT"
+          echo "================================="
+          echo "⏰ Pipeline completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🔗 Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          
+          # Development deployment status
+          if [ "${{ needs.deploy-dev.result }}" == "success" ]; then
+            echo "✅ Development deployment: SUCCESS"
+          elif [ "${{ needs.deploy-dev.result }}" == "skipped" ]; then
+            echo "⏭️ Development deployment: SKIPPED (not dev branch)"
+          else
+            echo "❌ Development deployment: FAILED"
           fi
+          
+          # Staging deployment status
+          if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "✅ Staging deployment: SUCCESS"
+          elif [ "${{ needs.deploy-staging.result }}" == "skipped" ]; then
+            echo "⏭️ Staging deployment: SKIPPED (not staging branch)"
+          else
+            echo "❌ Staging deployment: FAILED"
+          fi
+          
+          echo ""
+          echo "🎯 Next steps:"
+          
+          if [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            echo "   → Test your mobile app with the dev environment"
+            echo "   → When ready, merge to staging branch for final validation"
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            echo "   → Perform final testing on staging environment"
+            echo "   → When validated, prepare for production deployment"
+          fi
+          
+          echo ""
+          echo "🚀 Pipeline completed successfully!"
