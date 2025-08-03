@@ -49,9 +49,11 @@ alter table public.profiles enable row level security;
 -- ============================================
 -- SUPPRESSION DE TOUTES LES ANCIENNES POLITIQUES
 -- ============================================
--- Liste exhaustive de tous les noms de politiques possibles
+-- Supprimer explicitement les anciennes politiques problématiques
 drop policy if exists "Public profiles are viewable by everyone" on public.profiles;
 drop policy if exists "Users can manage their own profile" on public.profiles;
+
+-- Liste exhaustive de tous les noms de politiques possibles (au cas où)
 drop policy if exists "Profiles are viewable" on public.profiles;
 drop policy if exists "Users can update their own profile" on public.profiles;
 drop policy if exists "Users can delete their own profile" on public.profiles;
