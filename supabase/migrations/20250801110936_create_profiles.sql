@@ -1,4 +1,4 @@
--- Extension pour UUID (obligatoire pour gen_random_uuid)
+-- Extension pour UUID (obligatoire pour gen_random_uuid )
 create extension if not exists "pgcrypto" with schema public;
 
 -- Table des profils utilisateur
