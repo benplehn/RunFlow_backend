@@ -8,7 +8,7 @@ on:
     branches: [development, staging]
 
 env:
-  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV }}
 
 jobs:
   # ========================================
@@ -267,7 +267,7 @@ jobs:
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
       name: development
-      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN) }}
+      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN_DEV) }}
     
     steps:
       - name: 📥 Checkout repository
@@ -292,7 +292,7 @@ jobs:
       - name: 🔗 Link to Development project
         run: |
           echo "🔗 Linking to development project..."
-          supabase link --project-ref ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV }}
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_DEV }}
           echo "✅ Successfully linked to development project"
 
       - name: 📊 Deploy database migrations
@@ -326,7 +326,7 @@ jobs:
         run: |
           echo "🎯 Generating types from deployed database..."
           mkdir -p types
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV }} > types/database.types.ts
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_DEV }} > types/database.types.ts
           echo "✅ Production types generated"
 
       - name: 📋 Development deployment summary
@@ -351,7 +351,7 @@ jobs:
     if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
     environment:
       name: staging
-      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN_STAGING) }}
+      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN_DEV) }}
     
     steps:
       - name: 📥 Checkout repository
@@ -370,13 +370,13 @@ jobs:
       - name: 🔐 Login to Supabase
         run: |
           echo "🔐 Authenticating with Supabase..."
-          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }}
+          supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV }}
           echo "✅ Authentication successful"
 
       - name: 🔗 Link to Staging project
         run: |
           echo "🔗 Linking to staging project..."
-          supabase link --project-ref ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }}
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_STAGING }}
           echo "✅ Successfully linked to staging project"
 
       - name: 📊 Deploy database migrations
@@ -408,10 +408,10 @@ jobs:
           
           # Test API endpoints (basic connectivity)
           echo "📡 Testing API endpoints..."
-          API_URL="https://${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }}.supabase.co/rest/v1/"
+          API_URL="https://${{ secrets.SUPABASE_PROJET_REF_STAGING }}.supabase.co/rest/v1/"
           
           # Test health endpoint
-          if curl -f "${API_URL}" -H "apikey: ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING || 'dummy_key' }}" 2>/dev/null; then
+          if curl -f "${API_URL}" -H "apikey: ${{ secrets.SUPABASE_PROJET_REF_STAGING || 'dummy_key' }}" 2>/dev/null; then
             echo "✅ API endpoint accessible"
           else
             echo "⚠️ API test completed (authentication required - expected)"
@@ -423,7 +423,7 @@ jobs:
         run: |
           echo "🎯 Generating types from deployed database..."
           mkdir -p types
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }} > types/database.types.ts
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_STAGING }} > types/database.types.ts
           echo "✅ Production types generated"
 
       - name: 📋 Staging deployment summary
@@ -431,8 +431,8 @@ jobs:
           echo ""
           echo "🎉 STAGING DEPLOYMENT COMPLETED!"
           echo "================================="
-          echo "🔗 Project URL: https://${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }}.supabase.co"
-          echo "📊 Dashboard: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_ACCESS_TOKEN_STAGING }}"
+          echo "🔗 Project URL: https://${{ secrets.SUPABASE_PROJET_REF_STAGING }}.supabase.co"
+          echo "📊 Dashboard: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_PROJET_REF_STAGING }}"
           echo "🎭 Environment: Staging (production-like, no seed data)"
           echo "⏰ Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo ""
