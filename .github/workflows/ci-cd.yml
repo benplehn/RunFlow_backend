@@ -300,7 +300,7 @@ jobs:
           echo "📊 Deploying database changes to DEVELOPMENT..."
           echo "ℹ️ Including seed data for development testing"
           
-          supabase db push --include-seed
+          supabase db push --include-seed --password ${{ secrets.SUPABASE_DB_PASSWORD_DEV }}
           
           echo "✅ Database deployment completed"
 
@@ -376,7 +376,7 @@ jobs:
       - name: 🔗 Link to Staging project
         run: |
           echo "🔗 Linking to staging project..."
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_STAGING }}
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_STAGING }} --password ${{ secrets.SUPABASE_DB_PASSWORD_DEV }}
           echo "✅ Successfully linked to staging project"
 
       - name: 📊 Deploy database migrations
@@ -384,7 +384,7 @@ jobs:
           echo "📊 Deploying database changes to STAGING..."
           echo "⚠️ Deploying WITHOUT seed data (production-like environment)"
           
-          supabase db push --include-seed=false
+          supabase db push --include-seed=false --password ${{ secrets.SUPABASE_DB_PASSWORD_DEV }}
           
           echo "✅ Database deployment completed"
 
