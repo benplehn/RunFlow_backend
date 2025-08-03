@@ -267,7 +267,7 @@ jobs:
     if: github.ref == 'refs/heads/development' && github.event_name == 'push'
     environment:
       name: development
-      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN_DEV) }}
+      url: ${{ format('https://%s.supabase.co', env.SUPABASE_PRJECT_REF_DEV) }}
     
     steps:
       - name: 📥 Checkout repository
@@ -351,7 +351,7 @@ jobs:
     if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
     environment:
       name: staging
-      url: ${{ format('https://%s.supabase.co', env.SUPABASE_ACCESS_TOKEN_DEV) }}
+      url: ${{ format('https://%s.supabase.co', env.SUPABASE_PRJECT_REF_STAGING) }}
     
     steps:
       - name: 📥 Checkout repository
