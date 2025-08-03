@@ -292,7 +292,7 @@ jobs:
       - name: 🔗 Link to Development project
         run: |
           echo "🔗 Linking to development project..."
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_DEV }}
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJET_REF_DEV }} --password ${{ secrets.SUPABASE_DB_PASSWORD_DEV }}
           echo "✅ Successfully linked to development project"
 
       - name: 📊 Deploy database migrations
