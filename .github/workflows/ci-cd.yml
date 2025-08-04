@@ -231,7 +231,7 @@ jobs:
         run: |
           echo "🎯 Generating TypeScript types from database schema..."
           mkdir -p types
-          supabase gen types typescript --local > types/database.types.ts
+          supabase gen types typescript --local > supabase/functions/_shared/database.types.ts
           
           # Validate generated types
           if [ -f "types/database.types.ts" ] && [ -s "types/database.types.ts" ]; then
@@ -323,7 +323,7 @@ jobs:
         run: |
           echo "🎯 Generating types from deployed database..."
           mkdir -p types
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_DEV }} > types/database.types.ts
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_DEV }} > supabase/functions/_shared/database.types.ts
           echo "✅ Production types generated"
 
       - name: 📋 Development deployment summary
@@ -417,7 +417,7 @@ jobs:
         run: |
           echo "🎯 Generating types from deployed database..."
           mkdir -p types
-          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_STAGING }} > types/database.types.ts
+          supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJET_REF_STAGING }} > supabase/functions/_shared/database.types.ts
           echo "✅ Production types generated"
 
       - name: 📋 Staging deployment summary

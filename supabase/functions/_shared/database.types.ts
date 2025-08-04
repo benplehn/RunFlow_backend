@@ -34,6 +34,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      generation_parameters: {
+        Row: {
+          base_weekly_km: number
+          goal: Database["public"]["Enums"]["training_goal"]
+          id: string
+          level: Database["public"]["Enums"]["training_level"]
+          peak_multiplier: number
+          volume_reduction_peak: number
+        }
+        Insert: {
+          base_weekly_km: number
+          goal: Database["public"]["Enums"]["training_goal"]
+          id?: string
+          level: Database["public"]["Enums"]["training_level"]
+          peak_multiplier: number
+          volume_reduction_peak?: number
+        }
+        Update: {
+          base_weekly_km?: number
+          goal?: Database["public"]["Enums"]["training_goal"]
+          id?: string
+          level?: Database["public"]["Enums"]["training_level"]
+          peak_multiplier?: number
+          volume_reduction_peak?: number
+        }
+        Relationships: []
+      }
+      planned_sessions: {
+        Row: {
+          day_of_week: number
+          id: string
+          scheduled_date: string
+          status: string
+          week_id: string
+          workout_details: Json
+        }
+        Insert: {
+          day_of_week: number
+          id?: string
+          scheduled_date: string
+          status?: string
+          week_id: string
+          workout_details: Json
+        }
+        Update: {
+          day_of_week?: number
+          id?: string
+          scheduled_date?: string
+          status?: string
+          week_id?: string
+          workout_details?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planned_sessions_week_id_fkey"
+            columns: ["week_id"]
+            isOneToOne: false
+            referencedRelation: "planned_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planned_weeks: {
+        Row: {
+          id: string
+          key_workouts: Json
+          phase: Database["public"]["Enums"]["training_phase"]
+          plan_id: string
+          start_date: string
+          target_km: number
+          week_number: number
+          zone_distribution: Json
+        }
+        Insert: {
+          id?: string
+          key_workouts: Json
+          phase: Database["public"]["Enums"]["training_phase"]
+          plan_id: string
+          start_date: string
+          target_km: number
+          week_number: number
+          zone_distribution: Json
+        }
+        Update: {
+          id?: string
+          key_workouts?: Json
+          phase?: Database["public"]["Enums"]["training_phase"]
+          plan_id?: string
+          start_date?: string
+          target_km?: number
+          week_number?: number
+          zone_distribution?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planned_weeks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "user_training_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -70,6 +173,72 @@ export type Database = {
         }
         Relationships: []
       }
+      user_training_plans: {
+        Row: {
+          created_at: string
+          duration_weeks: number
+          goal: Database["public"]["Enums"]["training_goal"]
+          id: string
+          is_active: boolean
+          level: Database["public"]["Enums"]["training_level"]
+          peak_weekly_km: number
+          phase_distribution: Json
+          sessions_per_week: number
+          target_date: string
+          user_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_weeks: number
+          goal: Database["public"]["Enums"]["training_goal"]
+          id?: string
+          is_active?: boolean
+          level: Database["public"]["Enums"]["training_level"]
+          peak_weekly_km: number
+          phase_distribution: Json
+          sessions_per_week: number
+          target_date: string
+          user_data?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_weeks?: number
+          goal?: Database["public"]["Enums"]["training_goal"]
+          id?: string
+          is_active?: boolean
+          level?: Database["public"]["Enums"]["training_level"]
+          peak_weekly_km?: number
+          phase_distribution?: Json
+          sessions_per_week?: number
+          target_date?: string
+          user_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_rules: {
+        Row: {
+          created_at: string
+          id: string
+          rule_data: Json
+          rule_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rule_data: Json
+          rule_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rule_data?: Json
+          rule_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -78,7 +247,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      training_goal: "5k" | "10k" | "half_marathon" | "marathon"
+      training_level: "beginner" | "intermediate" | "advanced"
+      training_phase: "build" | "intensity" | "specificity" | "peak"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -208,7 +379,11 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      training_goal: ["5k", "10k", "half_marathon", "marathon"],
+      training_level: ["beginner", "intermediate", "advanced"],
+      training_phase: ["build", "intensity", "specificity", "peak"],
+    },
   },
 } as const
 
