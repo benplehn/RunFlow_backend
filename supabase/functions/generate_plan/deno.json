@@ -1,3 +1,10 @@
 {
-  "imports": {}
+  "importMap": "../../import_map.json",
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.ns", "dom"]
+  },
+  "tasks": {
+    "serve": "deno run --allow-env --allow-net --unstable index.ts"
+  }
 }

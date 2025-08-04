@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "#db_types": "./supabase/functions/_shared/database.types.ts",
+    "#gen_plan_utils/": "./supabase/functions/generate_plan/utils/",
+    "#gen_plan_services/": "./supabase/functions/generate_plan/services/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "https://deno.land/x/dotenv/load.ts": "https://deno.land/x/dotenv/load.ts",
+    "date-fns/": "https://esm.sh/date-fns@2/"
+  }
+}

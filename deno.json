@@ -1,35 +1,12 @@
 {
-  "lock": false,
+  "importMap": "import_map.json",
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno check **/*.ts",
-    "cli": "echo \"import { parse } from 'https://deno.land/std/flags/mod.ts'; const { release } = parse(Deno.args); if (release) console.log('Release:', release);\" | deno run -",
-    "test": "deno test --allow-read --allow-env --allow-net",
-    "build": "deno cache supabase/functions/**/*.ts",
-    "serve": "deno run --allow-env --allow-net supabase/functions/*/index.ts"
-  },
-  "lint": {
-    "include": ["supabase/functions/"],
-    "exclude": ["supabase/functions/_shared/deps.ts"],
-    "rules": {
-      "tags": ["recommended"],
-      "include": ["ban-untagged-todo"],
-      "exclude": ["no-unused-vars"]
-    }
-  },
-  "fmt": {
-    "include": ["supabase/functions/"],
-    "exclude": ["supabase/functions/_shared/deps.ts"],
-    "options": {
-      "useTabs": false,
-      "lineWidth": 100,
-      "indentWidth": 2,
-      "singleQuote": true,
-      "proseWrap": "preserve"
-    }
+    "start": "supabase functions serve generate_plan",
+    "build": "deno cache supabase/functions/generate_plan/index.ts",
+    "test": "deno test supabase/functions/generate_plan/tests"
   },
   "compilerOptions": {
-    "allowJs": false,
-    "strict": true
-  },
-  "importMap": "./import_map.json"
+    "strict": true,
+    "lib": ["deno.ns", "dom"]
+  }
 }
